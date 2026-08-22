@@ -17,43 +17,56 @@ const getDevHostIp = (): string => {
   return '10.109.98.12';
 };
 
-const getBaseUrl = (defaultPort: number) => {
+const getBaseUrl = (defaultPort: number): string => {
   const envUrl = defaultPort === 8000 
     ? (typeof process !== 'undefined' && process.env?.EXPO_PUBLIC_CORE_URL)
     : (typeof process !== 'undefined' && process.env?.EXPO_PUBLIC_AI_URL);
 
   if (envUrl && envUrl.trim() !== '') return envUrl.trim().replace(/\/+$/, '');
 
-  // Default to live Render deployment
-  return DEFAULT_PROD_URL;
+  // Web Browser runtime: dynamically target local backend running on current host
+  if (typeof window !== 'undefined' && window.location && window.location.hostname) {
+    const host = window.location.hostname;
+    return `http://${host}:${defaultPort}`;
+  }
+
+  // Development / local mobile device fallback
+  const devIp = getDevHostIp();
+  if (devIp && devIp !== 'localhost') {
+    return `http://${devIp}:${defaultPort}`;
+  }
+
+  return `http://localhost:${defaultPort}`;
 };
 
-export const CORE_API_URL: string = getBaseUrl(8000);
-export const AI_API_URL: string = getBaseUrl(8001);
+export const getCoreApiUrl = (): string => getBaseUrl(8000);
+export const getAiApiUrl = (): string => getBaseUrl(8001);
+
+export const CORE_API_URL: string = getCoreApiUrl();
+export const AI_API_URL: string = getAiApiUrl();
 
 export type UserRole = 'mother' | 'partner' | 'family' | 'doctor';
 
 // Helper for fetching core backend
 async function coreFetchRaw(path: string, options: RequestInit = {}): Promise<Response> {
-  const url = `${CORE_API_URL}${path}`;
+  const baseUrl = getCoreApiUrl();
+  const url = `${baseUrl}${path}`;
   try {
-    return await fetch(url, options);
-  } catch (primaryErr) {
-    // Only attempt local IP fallbacks if running on local http dev mode
-    if (!CORE_API_URL.startsWith('https://')) {
-      const devIp = getDevHostIp();
-      if (devIp && devIp !== 'localhost') {
-        try {
-          return await fetch(`http://${devIp}:8000${path}`, options);
-        } catch (wifiErr) {}
-      }
-      if (Platform.OS === 'android' && !Constants.isDevice) {
-        try {
-          return await fetch(`http://10.0.2.2:8000${path}`, options);
-        } catch (emuErr) {}
-      }
+    const res = await fetch(url, options);
+    if (!res.ok && res.status === 404 && baseUrl !== 'http://localhost:8000') {
+      try {
+        const fbRes = await fetch(`http://localhost:8000${path}`, options);
+        if (fbRes.ok) return fbRes;
+      } catch (fbErr) {}
     }
-    throw new Error(`Cannot reach server at ${CORE_API_URL}. Please check network connection.`);
+    return res;
+  } catch (primaryErr) {
+    if (baseUrl !== 'http://localhost:8000') {
+      try {
+        return await fetch(`http://localhost:8000${path}`, options);
+      } catch (localErr) {}
+    }
+    throw new Error(`Cannot reach server at ${baseUrl}. Please ensure core_backend is running on port 8000.`);
   }
 }
 
@@ -167,16 +180,15 @@ function uploadFormDataWithXHR(url: string, formData: FormData, token?: string |
   });
 }
 
-// ── Core API fetch (auth, tracker, etc.) ──────────────────────────────────────
-
 export async function apiFetch(path: string, options: RequestInit = {}) {
   let token = await AsyncStorage.getItem('access_token');
   if (token) token = token.replace(/^["']|["']$/g, '');
 
+  const baseUrl = getCoreApiUrl();
   const isFormData = options.body instanceof FormData || (options.body && options.body.constructor && options.body.constructor.name === 'FormData');
   
   if (isFormData && Platform.OS !== 'web') {
-    return uploadFormDataWithXHR(`${CORE_API_URL}${path}`, options.body as FormData, token);
+    return uploadFormDataWithXHR(`${baseUrl}${path}`, options.body as FormData, token);
   }
 
   const headers: Record<string, string> = {
@@ -189,22 +201,15 @@ export async function apiFetch(path: string, options: RequestInit = {}) {
     headers['Authorization'] = `Bearer ${token}`;
   }
 
-  let res;
+  let res: Response;
   try {
-    res = await fetch(`${CORE_API_URL}${path}`, { ...options, headers });
+    res = await fetch(`${baseUrl}${path}`, { ...options, headers });
   } catch (err) {
-    if (Platform.OS === 'android') {
-      const devIp = getDevHostIp();
+    if (baseUrl !== 'http://localhost:8000') {
       try {
-        const wifiUrl = `http://${devIp}:8000${path}`;
-        res = await fetch(wifiUrl, { ...options, headers });
-      } catch (wifiErr) {
-        if (!Constants.isDevice) {
-          const emulatorUrl = `http://10.0.2.2:8000${path}`;
-          res = await fetch(emulatorUrl, { ...options, headers });
-        } else {
-          throw wifiErr;
-        }
+        res = await fetch(`http://localhost:8000${path}`, { ...options, headers });
+      } catch (fbErr) {
+        throw new Error(`Cannot reach MaternalCare backend at ${baseUrl}. Please ensure core_backend is running on port 8000.`);
       }
     } else {
       throw err;
@@ -212,8 +217,15 @@ export async function apiFetch(path: string, options: RequestInit = {}) {
   }
 
   if (!res.ok) {
+    // If hit 404 from non-localhost URL, attempt localhost:8000 fallback
+    if (res.status === 404 && baseUrl !== 'http://localhost:8000') {
+      try {
+        const fbRes = await fetch(`http://localhost:8000${path}`, { ...options, headers });
+        if (fbRes.ok) return await fbRes.json();
+      } catch (fbErr) {}
+    }
     const err = await res.json().catch(() => ({}));
-    throw new Error(err.detail || `Request failed: ${res.status}`);
+    throw new Error(err.detail || `Request failed with status ${res.status}`);
   }
   return res.json();
 }
@@ -221,10 +233,11 @@ export async function apiFetch(path: string, options: RequestInit = {}) {
 // ── AI Microservice fetch (no auth required — local service) ──────────────────
 
 async function aiFetch(path: string, options: RequestInit = {}) {
+  const baseUrl = getAiApiUrl();
   const isFormData = options.body instanceof FormData || (options.body && options.body.constructor && options.body.constructor.name === 'FormData');
 
   if (isFormData && Platform.OS !== 'web') {
-    return uploadFormDataWithXHR(`${AI_API_URL}${path}`, options.body as FormData);
+    return uploadFormDataWithXHR(`${baseUrl}${path}`, options.body as FormData);
   }
 
   const headers: Record<string, string> = {
@@ -234,38 +247,24 @@ async function aiFetch(path: string, options: RequestInit = {}) {
     headers['Content-Type'] = 'application/json';
   }
 
-  const controller = new AbortController();
-  const timeoutId = setTimeout(() => controller.abort(), 120000); // 120s timeout
-
-  let res;
+  let res: Response;
   try {
-    res = await fetch(`${AI_API_URL}${path}`, {
-      ...options,
-      headers,
-      signal: controller.signal,
-    });
+    res = await fetch(`${baseUrl}${path}`, { ...options, headers });
   } catch (err) {
-    if (Platform.OS === 'android') {
-      const devIp = getDevHostIp();
+    if (baseUrl !== 'http://localhost:8001') {
       try {
-        const wifiUrl = `http://${devIp}:8001${path}`;
-        res = await fetch(wifiUrl, { ...options, headers, signal: controller.signal });
-      } catch (wifiErr) {
-        if (!Constants.isDevice) {
-          const emulatorUrl = `http://10.0.2.2:8001${path}`;
-          res = await fetch(emulatorUrl, { ...options, headers, signal: controller.signal });
-        } else {
-          throw wifiErr;
-        }
+        res = await fetch(`http://localhost:8001${path}`, { ...options, headers });
+      } catch (fbErr) {
+        throw new Error(`Cannot reach MaternalCare AI service at ${baseUrl}. Please ensure ai_service is running on port 8001.`);
       }
     } else {
       throw err;
     }
   }
-  clearTimeout(timeoutId);
+
   if (!res.ok) {
     const err = await res.json().catch(() => ({}));
-    throw new Error(err.detail || `AI service error: ${res.status}`);
+    throw new Error(err.detail || `AI service request failed with status ${res.status}`);
   }
   return res.json();
 }
