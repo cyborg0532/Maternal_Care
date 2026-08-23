@@ -126,6 +126,13 @@ export default function PublicPassportScreen() {
         </View>
       ))}
 
+      <TouchableOpacity 
+        style={styles.dispatchAmbulanceBtn}
+        onPress={() => Linking.openURL('tel:911')}
+      >
+        <Text style={styles.dispatchAmbulanceText}>🚨 DISPATCH SAFE AMBULANCE ROUTE</Text>
+      </TouchableOpacity>
+
       <Text style={styles.sectionTitle}>🧠 AI REPORT ANALYSER INSIGHTS</Text>
       {data.ai_report_insights.map((insight, idx) => (
         <View key={idx} style={styles.insightBox}>
@@ -162,6 +169,8 @@ const styles = StyleSheet.create({
   contactSub: { color: '#9ca3af', fontSize: 12, marginTop: 2 },
   callBtn: { backgroundColor: '#16a34a', paddingHorizontal: 14, paddingVertical: 8, borderRadius: 8 },
   callBtnText: { color: '#ffffff', fontWeight: '800', fontSize: 12 },
+  dispatchAmbulanceBtn: { backgroundColor: '#dc2626', paddingVertical: 12, borderRadius: 10, alignItems: 'center', marginVertical: 10 },
+  dispatchAmbulanceText: { color: '#ffffff', fontWeight: '900', fontSize: 13, letterSpacing: 0.5 },
   insightBox: { backgroundColor: '#111827', padding: 12, borderRadius: 12, marginBottom: 8, borderLeftWidth: 3, borderLeftColor: '#8b5cf6' },
   insightType: { color: '#c084fc', fontSize: 11, fontWeight: '700', marginBottom: 4 },
   insightSummary: { color: '#e2e8f0', fontSize: 13, lineHeight: 18 }

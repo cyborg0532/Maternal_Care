@@ -1,7 +1,7 @@
 import { useEffect, useState, useCallback } from 'react';
 import {
   View, Text, StyleSheet, ScrollView, TouchableOpacity,
-  RefreshControl, ActivityIndicator, useWindowDimensions, Platform
+  RefreshControl, ActivityIndicator, useWindowDimensions, Platform, Modal, Image
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { apiFetch, AuthService } from '../../services/api';
@@ -47,6 +47,11 @@ export default function HomeScreen() {
   const [refreshing, setRefreshing] = useState(false);
   const [checklist, setChecklist] = useState(DAILY_CHECKLIST);
   const [waterCount, setWaterCount] = useState(0);
+
+  // Pandemic & Zero-Touch Passport Demo Modals
+  const [showQRModal, setShowQRModal] = useState(false);
+  const [showJudgeModal, setShowJudgeModal] = useState(false);
+  const [nfcSimulating, setNfcSimulating] = useState(false);
 
   // Medicine reminders hook
   const { getDashboardStats } = useMedicineReminders();
@@ -121,6 +126,49 @@ export default function HomeScreen() {
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={Colors.primary} />}
         showsVerticalScrollIndicator={false}
       >
+        {/* ── Top Status Banner (Pandemic Isolation Mode) ──────────────────── */}
+        <View style={styles.pandemicBanner}>
+          <Text style={styles.pandemicBannerIcon}>🛡️</Text>
+          <Text style={styles.pandemicBannerText}>
+            Zero-Exposure Protocol Active: <Text style={styles.pandemicBannerHighlight}>Day-42 Isolation Mode</Text>
+          </Text>
+        </View>
+
+        {/* ── Zero-Touch Medical Passport Dedicated Card ──────────────────── */}
+        <View style={styles.zeroTouchPassportCard}>
+          <View style={styles.passportHeaderRow}>
+            <Text style={styles.passportCardEmoji}>🆔</Text>
+            <View style={{ flex: 1 }}>
+              <Text style={styles.passportCardTitle}>Zero-Touch Medical Passport</Text>
+              <Text style={styles.passportCardSub}>Contactless paramedic vital sync via Dynamic QR & NFC</Text>
+            </View>
+            <View style={styles.activeTag}>
+              <Text style={styles.activeTagText}>LIVE</Text>
+            </View>
+          </View>
+
+          <View style={styles.passportActionButtons}>
+            <TouchableOpacity style={styles.qrPassBtn} onPress={() => setShowQRModal(true)}>
+              <Text style={styles.qrPassBtnText}>📲 View Emergency QR Pass</Text>
+            </TouchableOpacity>
+            
+            <TouchableOpacity 
+              style={styles.nfcPassBtn} 
+              onPress={() => {
+                setNfcSimulating(true);
+                setTimeout(() => {
+                  setNfcSimulating(false);
+                  setShowJudgeModal(true);
+                }, 1200);
+              }}
+            >
+              <Text style={styles.nfcPassBtnText}>
+                {nfcSimulating ? "📡 Syncing NFC..." : "💳 Tap NFC Medical Card"}
+              </Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+
         {/* ── Greeting Row ──────────────────────────────────────────────────── */}
         <View style={styles.greetingRow}>
           <View>
@@ -340,11 +388,140 @@ export default function HomeScreen() {
 
         <View style={{ height: Spacing.xxl }} />
       </ScrollView>
+
+      {/* ── Emergency QR Modal ────────────────────────────────────────────── */}
+      <Modal visible={showQRModal} animationType="slide" transparent>
+        <View style={styles.modalBackdrop}>
+          <View style={styles.qrModalContent}>
+            <Text style={styles.modalTitle}>📲 Dynamic Emergency QR Pass</Text>
+            <Text style={styles.modalSub}>First responders scan this code for zero-touch vital access</Text>
+            
+            <View style={styles.qrBox}>
+              <Image
+                source={{ uri: 'https://api.qrserver.com/v1/create-qr-code/?size=220x220&data=https://maternalcare.app/m/med_pass_free_test_12345' }}
+                style={styles.qrImage}
+              />
+              <Text style={styles.qrUrlText}>https://maternalcare.app/m/med_pass_free_test_12345</Text>
+            </View>
+
+            <TouchableOpacity style={styles.closeModalBtn} onPress={() => setShowQRModal(false)}>
+              <Text style={styles.closeModalBtnText}>Close Pass</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
+
+      {/* ── Judge NFC Simulation Paramedic Modal ─────────────────────────── */}
+      <Modal visible={showJudgeModal} animationType="fade" transparent>
+        <View style={styles.modalBackdrop}>
+          <View style={styles.paramedicModalContent}>
+            <View style={styles.paramedicBadgeRow}>
+              <Text style={styles.paramedicBadge}>🚨 FIRST-RESPONDER TRIAGE VIEW</Text>
+              <TouchableOpacity onPress={() => setShowJudgeModal(false)}>
+                <Text style={styles.closeX}>✕</Text>
+              </TouchableOpacity>
+            </View>
+
+            <Text style={styles.patientNameHeader}>Free Mother (Patient)</Text>
+            <Text style={styles.patientMetaText}>Age 29 · Blood O+ · Week 31 (Third Trimester)</Text>
+
+            <View style={styles.riskAlertsBox}>
+              <Text style={styles.riskAlertTitle}>⚠️ CRITICAL RISK FLAGS</Text>
+              <Text style={styles.riskAlertItem}>• ALLERGIES: Penicillin, Shellfish</Text>
+              <Text style={styles.riskAlertItem}>• Mild Gestational Diabetes Risk</Text>
+              <Text style={styles.riskAlertItem}>• History of PCOS</Text>
+            </View>
+
+            <View style={styles.reportSummaryBox}>
+              <Text style={styles.reportSummaryTitle}>📑 RECENT AI LAB ANALYSIS</Text>
+              <Text style={styles.reportSummaryText}>
+                Gestational Diabetes Screen: Mild elevation in Fasting Glucose (98 mg/dL). Recommended dietary monitoring. Fetal heart rate normal (142 bpm).
+              </Text>
+            </View>
+
+            <View style={styles.actionButtonRow}>
+              <TouchableOpacity style={styles.callPrimaryBtn}>
+                <Text style={styles.callPrimaryText}>📞 Call Husband</Text>
+              </TouchableOpacity>
+              <TouchableOpacity style={styles.callGynBtn}>
+                <Text style={styles.callGynText}>🏥 Call OB-GYN</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
     </DashboardLayout>
   );
 }
 
 const styles = StyleSheet.create({
+  // Pandemic Banner
+  pandemicBanner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#0284c7',
+    paddingVertical: 8,
+    paddingHorizontal: 14,
+    borderRadius: Radius.md,
+    marginBottom: Spacing.sm,
+    gap: 8,
+  },
+  pandemicBannerIcon: { fontSize: 16 },
+  pandemicBannerText: { color: '#ffffff', fontSize: 12, fontWeight: '600' },
+  pandemicBannerHighlight: { color: '#bae6fd', fontWeight: '800' },
+
+  // Zero-Touch Passport Card
+  zeroTouchPassportCard: {
+    backgroundColor: '#111827',
+    borderRadius: Radius.xl,
+    padding: Spacing.md,
+    marginBottom: Spacing.md,
+    borderWidth: 1.5,
+    borderColor: '#ef4444',
+    ...Shadows.sm,
+  },
+  passportHeaderRow: { flexDirection: 'row', alignItems: 'center', gap: 10, marginBottom: 12 },
+  passportCardEmoji: { fontSize: 24 },
+  passportCardTitle: { color: '#ffffff', fontSize: 15, fontWeight: '800' },
+  passportCardSub: { color: '#9ca3af', fontSize: 11, marginTop: 2 },
+  activeTag: { backgroundColor: 'rgba(239, 68, 68, 0.2)', paddingHorizontal: 8, paddingVertical: 2, borderRadius: 4, borderWidth: 1, borderColor: '#ef4444' },
+  activeTagText: { color: '#fca5a5', fontSize: 9, fontWeight: '800' },
+
+  passportActionButtons: { flexDirection: 'row', gap: 10 },
+  qrPassBtn: { flex: 1, backgroundColor: '#dc2626', paddingVertical: 10, borderRadius: 8, alignItems: 'center' },
+  qrPassBtnText: { color: '#ffffff', fontSize: 12, fontWeight: '800' },
+  nfcPassBtn: { flex: 1, backgroundColor: '#2563eb', paddingVertical: 10, borderRadius: 8, alignItems: 'center' },
+  nfcPassBtnText: { color: '#ffffff', fontSize: 12, fontWeight: '800' },
+
+  // Modals
+  modalBackdrop: { flex: 1, backgroundColor: 'rgba(0,0,0,0.75)', justifyContent: 'center', alignItems: 'center', padding: 20 },
+  qrModalContent: { backgroundColor: '#1e293b', borderRadius: 16, padding: 24, width: '100%', maxWidth: 400, alignItems: 'center' },
+  modalTitle: { color: '#ffffff', fontSize: 18, fontWeight: '800', marginBottom: 6 },
+  modalSub: { color: '#94a3b8', fontSize: 12, textAlign: 'center', marginBottom: 16 },
+  qrBox: { backgroundColor: '#ffffff', borderRadius: 12, padding: 20, alignItems: 'center', width: '100%', marginBottom: 16 },
+  qrImage: { width: 220, height: 220, borderRadius: 8, marginBottom: 12 },
+  qrPlaceholderText: { color: '#0f172a', fontWeight: '900', fontSize: 16, marginVertical: 20 },
+  qrUrlText: { color: '#64748b', fontSize: 10, fontWeight: '600' },
+  closeModalBtn: { backgroundColor: '#475569', paddingVertical: 10, paddingHorizontal: 20, borderRadius: 8 },
+  closeModalBtnText: { color: '#ffffff', fontWeight: '700' },
+
+  paramedicModalContent: { backgroundColor: '#0f172a', borderRadius: 16, padding: 20, width: '100%', maxWidth: 450, borderWidth: 1.5, borderColor: '#ef4444' },
+  paramedicBadgeRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 },
+  paramedicBadge: { color: '#ef4444', fontWeight: '900', fontSize: 12 },
+  closeX: { color: '#94a3b8', fontSize: 18, fontWeight: '700' },
+  patientNameHeader: { color: '#ffffff', fontSize: 20, fontWeight: '800' },
+  patientMetaText: { color: '#38bdf8', fontSize: 12, marginTop: 2, marginBottom: 14 },
+  riskAlertsBox: { backgroundColor: 'rgba(239, 68, 68, 0.1)', padding: 12, borderRadius: 8, borderWidth: 1, borderColor: '#ef4444', marginBottom: 12 },
+  riskAlertTitle: { color: '#fca5a5', fontSize: 11, fontWeight: '800', marginBottom: 4 },
+  riskAlertItem: { color: '#fecdd3', fontSize: 12, marginTop: 2 },
+  reportSummaryBox: { backgroundColor: '#1e293b', padding: 12, borderRadius: 8, marginBottom: 16 },
+  reportSummaryTitle: { color: '#94a3b8', fontSize: 10, fontWeight: '800', marginBottom: 4 },
+  reportSummaryText: { color: '#e2e8f0', fontSize: 12, lineHeight: 18 },
+  actionButtonRow: { flexDirection: 'row', gap: 10 },
+  callPrimaryBtn: { flex: 1, backgroundColor: '#16a34a', paddingVertical: 10, borderRadius: 8, alignItems: 'center' },
+  callPrimaryText: { color: '#ffffff', fontWeight: '800', fontSize: 12 },
+  callGynBtn: { flex: 1, backgroundColor: '#2563eb', paddingVertical: 10, borderRadius: 8, alignItems: 'center' },
+  callGynText: { color: '#ffffff', fontWeight: '800', fontSize: 12 },
   container: { flex: 1, backgroundColor: Colors.background },
   inner: { padding: Spacing.md },
   center: {

@@ -61,8 +61,8 @@ export default function ReportAnalyzerScreen() {
       const data = await analyzeMedicalReport(activeText.trim() || null, selectedFile);
       setResult(data);
     } catch (err: any) {
-      console.error(err);
-      setError(err.message || 'Failed to analyze the report. Please make sure the AI service is running.');
+      console.warn("Report analysis error:", err?.message || String(err));
+      setError(err?.message || 'Failed to analyze the report. Please make sure the AI service is running.');
     } finally {
       setLoading(false);
     }
@@ -229,6 +229,35 @@ export default function ReportAnalyzerScreen() {
             {!loading && result && (
               <View style={styles.resultContainer}>
                 
+                {/* 0. Pandemic Triage Badge */}
+                {result.warning_flags && result.warning_flags.length > 0 ? (
+                  <View style={styles.triageRedCard}>
+                    <View style={styles.triageHeaderRow}>
+                      <Text style={styles.triageRedTitle}>🔴 STATUS: IMMEDIATE CLINICAL INTERVENTION NEEDED</Text>
+                      <View style={styles.triageBadgeRed}><Text style={styles.triageBadgeRedText}>CRITICAL</Text></View>
+                    </View>
+                    <Text style={styles.triageRedSub}>
+                      Abnormal parameters detected during isolation protocol. Do not ignore warning signs.
+                    </Text>
+                    <TouchableOpacity
+                      style={styles.sosActionBtn}
+                      onPress={() => router.push('/(tabs)/sos' as any)}
+                    >
+                      <Text style={styles.sosActionBtnText}>🚨 Trigger Emergency SOS Dispatch ➔</Text>
+                    </TouchableOpacity>
+                  </View>
+                ) : (
+                  <View style={styles.triageGreenCard}>
+                    <View style={styles.triageHeaderRow}>
+                      <Text style={styles.triageGreenTitle}>🟢 STATUS: HOME CARE SAFE</Text>
+                      <View style={styles.triageBadgeGreen}><Text style={styles.triageBadgeGreenText}>STABLE</Text></View>
+                    </View>
+                    <Text style={styles.triageGreenSub}>
+                      Parameters are within safe routine bounds. Please stay isolated at home to avoid virus exposure and protect hospital capacity.
+                    </Text>
+                  </View>
+                )}
+
                 {/* 1. Summary Card */}
                 <GlassCard accent={Colors.primary} style={styles.cardSpacing}>
                   <SectionHeader title="Overall Summary" icon="🌸" />
@@ -507,4 +536,33 @@ const styles = StyleSheet.create({
 
   disclaimerContainer: { marginTop: Spacing.sm, paddingHorizontal: Spacing.xs },
   disclaimerText: { ...Typography.micro, color: Colors.textMuted, lineHeight: 16 },
+
+  // Pandemic Triage Badges
+  triageRedCard: {
+    backgroundColor: '#7f1d1d',
+    borderRadius: Radius.lg,
+    padding: Spacing.md,
+    marginBottom: Spacing.md,
+    borderWidth: 1.5,
+    borderColor: '#ef4444',
+  },
+  triageGreenCard: {
+    backgroundColor: '#064e3b',
+    borderRadius: Radius.lg,
+    padding: Spacing.md,
+    marginBottom: Spacing.md,
+    borderWidth: 1.5,
+    borderColor: '#10b981',
+  },
+  triageHeaderRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 },
+  triageRedTitle: { color: '#fecdd3', fontSize: 13, fontWeight: '900', flex: 1 },
+  triageGreenTitle: { color: '#a7f3d0', fontSize: 13, fontWeight: '900', flex: 1 },
+  triageBadgeRed: { backgroundColor: '#ef4444', paddingHorizontal: 8, paddingVertical: 2, borderRadius: 4 },
+  triageBadgeRedText: { color: '#ffffff', fontSize: 9, fontWeight: '900' },
+  triageBadgeGreen: { backgroundColor: '#10b981', paddingHorizontal: 8, paddingVertical: 2, borderRadius: 4 },
+  triageBadgeGreenText: { color: '#ffffff', fontSize: 9, fontWeight: '900' },
+  triageRedSub: { color: '#ffe4e6', fontSize: 12, lineHeight: 18, marginBottom: 12 },
+  triageGreenSub: { color: '#d1fae5', fontSize: 12, lineHeight: 18 },
+  sosActionBtn: { backgroundColor: '#dc2626', paddingVertical: 10, borderRadius: 8, alignItems: 'center' },
+  sosActionBtnText: { color: '#ffffff', fontSize: 12, fontWeight: '900' },
 });

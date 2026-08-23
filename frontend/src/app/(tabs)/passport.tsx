@@ -8,7 +8,8 @@ import {
   Modal,
   ActivityIndicator,
   Alert,
-  Platform
+  Platform,
+  Image
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
@@ -32,6 +33,7 @@ export default function EmergencyPassportScreen() {
   const [nfcSuccess, setNfcSuccess] = useState<boolean>(false);
   const [showPromoModal, setShowPromoModal] = useState<boolean>(false);
   const [updatingTier, setUpdatingTier] = useState<boolean>(false);
+  const [showJudgeModal, setShowJudgeModal] = useState<boolean>(false);
 
   // Simulated authenticated user token for demo
   const [userRole, setUserRole] = useState<'FREE' | 'PREMIUM'>('FREE');
@@ -175,11 +177,10 @@ export default function EmergencyPassportScreen() {
           <View style={styles.qrWrapper}>
             <View style={styles.qrBox}>
               <Text style={styles.qrTitle}>MATERNALCARE EMERGENCY PASS</Text>
-              <View style={styles.qrMockCode}>
-                <Text style={styles.qrIcon}>🔳🔲🔳</Text>
-                <Text style={styles.qrIcon}>🔲🔳🔲</Text>
-                <Text style={styles.qrIcon}>🔳🔲🔳</Text>
-              </View>
+              <Image
+                source={{ uri: `https://api.qrserver.com/v1/create-qr-code/?size=220x220&data=${encodeURIComponent(passportData?.target_url || 'https://maternalcare.app/m/med_pass_free_test_12345')}` }}
+                style={{ width: 200, height: 200, marginVertical: 12, borderRadius: 8 }}
+              />
               <Text style={styles.qrTargetUrl} numberOfLines={1}>
                 {passportData?.target_url}
               </Text>
@@ -250,6 +251,14 @@ export default function EmergencyPassportScreen() {
               </Text>
             </TouchableOpacity>
           )}
+
+          {/* Judge Interactive Demo Simulation Button */}
+          <TouchableOpacity
+            style={styles.judgeSimulateBtn}
+            onPress={() => setShowJudgeModal(true)}
+          >
+            <Text style={styles.judgeSimulateBtnText}>⚡ Simulate NFC Tap (Judge Demo)</Text>
+          </TouchableOpacity>
         </View>
 
         {/* Informational Hardware Tier Modal for Free Tier Users */}
@@ -297,6 +306,46 @@ export default function EmergencyPassportScreen() {
           </View>
         </Modal>
 
+        {/* Judge NFC Simulation Paramedic Modal */}
+        <Modal visible={showJudgeModal} animationType="fade" transparent>
+          <View style={styles.modalOverlay}>
+            <View style={styles.paramedicModalContent}>
+              <View style={styles.paramedicBadgeRow}>
+                <Text style={styles.paramedicBadge}>🚨 FIRST-RESPONDER TRIAGE VIEW</Text>
+                <TouchableOpacity onPress={() => setShowJudgeModal(false)}>
+                  <Text style={styles.closeX}>✕</Text>
+                </TouchableOpacity>
+              </View>
+
+              <Text style={styles.patientNameHeader}>Free Mother (Patient)</Text>
+              <Text style={styles.patientMetaText}>Age 29 · Blood O+ · Week 31 (Third Trimester)</Text>
+
+              <View style={styles.riskAlertsBox}>
+                <Text style={styles.riskAlertTitle}>⚠️ CRITICAL RISK FLAGS</Text>
+                <Text style={styles.riskAlertItem}>• ALLERGIES: Penicillin, Shellfish</Text>
+                <Text style={styles.riskAlertItem}>• Mild Gestational Diabetes Risk</Text>
+                <Text style={styles.riskAlertItem}>• History of PCOS</Text>
+              </View>
+
+              <View style={styles.reportSummaryBox}>
+                <Text style={styles.reportSummaryTitle}>📑 RECENT AI LAB ANALYSIS</Text>
+                <Text style={styles.reportSummaryText}>
+                  Gestational Diabetes Screen: Mild elevation in Fasting Glucose (98 mg/dL). Recommended dietary monitoring. Fetal heart rate normal (142 bpm).
+                </Text>
+              </View>
+
+              <View style={styles.actionButtonRow}>
+                <TouchableOpacity style={styles.callPrimaryBtn}>
+                  <Text style={styles.callPrimaryText}>📞 Call Husband</Text>
+                </TouchableOpacity>
+                <TouchableOpacity style={styles.callGynBtn}>
+                  <Text style={styles.callGynText}>🏥 Call OB-GYN</Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+          </View>
+        </Modal>
+
       </ScrollView>
     </SafeAreaView>
     </DashboardLayout>
@@ -304,6 +353,33 @@ export default function EmergencyPassportScreen() {
 }
 
 const styles = StyleSheet.create({
+  judgeSimulateBtn: {
+    backgroundColor: '#0284c7',
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    borderRadius: 10,
+    marginTop: 12,
+    alignItems: 'center',
+  },
+  judgeSimulateBtnText: { color: '#ffffff', fontWeight: '800', fontSize: 13 },
+
+  paramedicModalContent: { backgroundColor: '#0f172a', borderRadius: 16, padding: 20, width: '100%', maxWidth: 450, borderWidth: 1.5, borderColor: '#ef4444' },
+  paramedicBadgeRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 },
+  paramedicBadge: { color: '#ef4444', fontWeight: '900', fontSize: 12 },
+  closeX: { color: '#94a3b8', fontSize: 18, fontWeight: '700' },
+  patientNameHeader: { color: '#ffffff', fontSize: 20, fontWeight: '800' },
+  patientMetaText: { color: '#38bdf8', fontSize: 12, marginTop: 2, marginBottom: 14 },
+  riskAlertsBox: { backgroundColor: 'rgba(239, 68, 68, 0.1)', padding: 12, borderRadius: 8, borderWidth: 1, borderColor: '#ef4444', marginBottom: 12 },
+  riskAlertTitle: { color: '#fca5a5', fontSize: 11, fontWeight: '800', marginBottom: 4 },
+  riskAlertItem: { color: '#fecdd3', fontSize: 12, marginTop: 2 },
+  reportSummaryBox: { backgroundColor: '#1e293b', padding: 12, borderRadius: 8, marginBottom: 16 },
+  reportSummaryTitle: { color: '#94a3b8', fontSize: 10, fontWeight: '800', marginBottom: 4 },
+  reportSummaryText: { color: '#e2e8f0', fontSize: 12, lineHeight: 18 },
+  actionButtonRow: { flexDirection: 'row', gap: 10 },
+  callPrimaryBtn: { flex: 1, backgroundColor: '#16a34a', paddingVertical: 10, borderRadius: 8, alignItems: 'center' },
+  callPrimaryText: { color: '#ffffff', fontWeight: '800', fontSize: 12 },
+  callGynBtn: { flex: 1, backgroundColor: '#2563eb', paddingVertical: 10, borderRadius: 8, alignItems: 'center' },
+  callGynText: { color: '#ffffff', fontWeight: '800', fontSize: 12 },
   container: { flex: 1, backgroundColor: '#090d16' },
   centerContainer: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#090d16' },
   loadingText: { color: '#94a3b8', marginTop: 12, fontSize: 14 },

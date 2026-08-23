@@ -8,7 +8,8 @@ import {
   Modal,
   ActivityIndicator,
   Alert,
-  Platform
+  Platform,
+  Image
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
@@ -173,11 +174,10 @@ export default function EmergencyPassportScreen() {
           <View style={styles.qrWrapper}>
             <View style={styles.qrBox}>
               <Text style={styles.qrTitle}>MATERNALCARE EMERGENCY PASS</Text>
-              <View style={styles.qrMockCode}>
-                <Text style={styles.qrIcon}>🔳🔲🔳</Text>
-                <Text style={styles.qrIcon}>🔲🔳🔲</Text>
-                <Text style={styles.qrIcon}>🔳🔲🔳</Text>
-              </View>
+              <Image
+                source={{ uri: `https://api.qrserver.com/v1/create-qr-code/?size=220x220&data=${encodeURIComponent(passportData?.target_url || 'https://maternalcare.app/m/med_pass_free_test_12345')}` }}
+                style={{ width: 200, height: 200, marginVertical: 12, borderRadius: 8 }}
+              />
               <Text style={styles.qrTargetUrl} numberOfLines={1}>
                 {passportData?.target_url}
               </Text>
