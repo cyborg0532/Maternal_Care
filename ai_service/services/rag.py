@@ -142,14 +142,18 @@ CHUNK_OVERLAP   = 50
 def _get_collection():
     global _chroma_collection
     if _chroma_collection is None:
-        import chromadb
-        CHROMA_DIR.mkdir(parents=True, exist_ok=True)
-        client = chromadb.PersistentClient(path=str(CHROMA_DIR))
-        _chroma_collection = client.get_or_create_collection(
-            name=COLLECTION_NAME,
-            metadata={"hnsw:space": "cosine"},
-        )
-        logger.info("[RAG] ChromaDB ready at %s (%d chunks)", CHROMA_DIR, _chroma_collection.count())
+        try:
+            import chromadb
+            CHROMA_DIR.mkdir(parents=True, exist_ok=True)
+            client = chromadb.PersistentClient(path=str(CHROMA_DIR))
+            _chroma_collection = client.get_or_create_collection(
+                name=COLLECTION_NAME,
+                metadata={"hnsw:space": "cosine"},
+            )
+            logger.info("[RAG] ChromaDB ready at %s (%d chunks)", CHROMA_DIR, _chroma_collection.count())
+        except ImportError:
+            logger.warning("[RAG] chromadb module not installed; fallback to lightweight local RAG.")
+            return None
     return _chroma_collection
 
 
@@ -238,7 +242,10 @@ def sync_data_folder() -> None:
         logger.warning("[RAG Sync] Data dir not found: %s", DATA_DIR)
         return
 
-    _get_collection()
+    coll = _get_collection()
+    if coll is None:
+        logger.warning("[RAG Sync] Skipping PDF folder index sync (chromadb unavailable).")
+        return
     manifest = _load_manifest()
     current_pdfs = {p.name: p for p in DATA_DIR.glob("*.pdf") if p.is_file()}
     added = modified = deleted = 0

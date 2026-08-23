@@ -17,7 +17,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from core_backend.database import Base, engine
-from core_backend.routers import auth, tracker, medicines, mood, sos, pcos, health_records, nfc
+from core_backend.routers import auth, tracker, medicines, mood, sos, pcos, health_records, nfc, emergency
 
 logging.basicConfig(level=logging.INFO)
 
@@ -38,7 +38,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Register CRUD routers only — no AI/RAG
+# Register CRUD routers
 app.include_router(auth.router)
 app.include_router(tracker.router)
 app.include_router(medicines.router)
@@ -47,9 +47,11 @@ app.include_router(sos.router)
 app.include_router(pcos.router)
 app.include_router(health_records.router)
 app.include_router(nfc.router)
+app.include_router(emergency.router)
 
 
 @app.get("/")
+@app.get("/health")
 def health():
     return {
         "service": "MaternalCare Core API",

@@ -22,6 +22,7 @@ export const NAV_ITEMS: NavItem[] = [
   { icon: '❤️', label: 'Mood Detection AI',   route: '/(tabs)/meds_mood' },
   { icon: '🌸', label: 'PCOS Assessment',      route: '/(tabs)/pcos' },
   { icon: '🏥', label: 'Hospitals & Doctors',  route: '/(tabs)/hospitals' },
+  { icon: '🆔', label: 'Emergency Passport',   route: '/(tabs)/passport' },
   { icon: '🚨', label: 'Emergency SOS',        route: '/(tabs)/sos' },
   { icon: '👨', label: 'Father Portal',        route: '/(tabs)/father-portal' },
   { icon: '📈', label: 'Health Reports',       route: '/(tabs)/health-reports' },

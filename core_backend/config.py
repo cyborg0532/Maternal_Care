@@ -8,6 +8,7 @@ load_dotenv(dotenv_path=os.path.join(os.path.dirname(__file__), ".env"), overrid
 
 class Settings(BaseSettings):
     PROJECT_NAME: str = "MaternalCare Backend"
+    APP_BASE_URL: str = os.getenv("APP_BASE_URL", "https://maternalcare.app")
     DATABASE_URL: str = os.getenv("DATABASE_URL", "sqlite:///./maternalcare.db")
     SECRET_KEY: str = os.getenv("SECRET_KEY", "maternalcare-secret-key-123456789")
     OVERPASS_API_URL: str = os.getenv("OVERPASS_API_URL", "https://overpass-api.de/api/interpreter")

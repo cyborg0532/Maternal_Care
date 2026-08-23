@@ -1,3 +1,5 @@
+import { Platform } from 'react-native';
+
 // ─── MaternalCare Premium Design System ─────────────────────────────────────
 // Soft White + Pink + Lavender + Teal palette — light background, premium feel
 
@@ -165,9 +167,10 @@ export const Shadows = {
   },
 };
 
-export const SIDEBAR_WIDTH = 260;
-export const TOPBAR_HEIGHT = 60;
+export const Fonts = {
+  mono: Platform.OS === 'ios' ? 'Courier' : 'monospace',
+};
 
-// URLs are now managed in src/services/api.ts (CORE_API_URL + AI_API_URL)
-// Use EXPO_PUBLIC_CORE_URL and EXPO_PUBLIC_AI_URL env vars to override.
+export type ThemeColor = keyof typeof Colors;
+
 

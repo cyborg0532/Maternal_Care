@@ -304,3 +304,45 @@ class NFCResolveResponse(BaseModel):
     message: Optional[str] = None
 
 
+# Emergency Medical Passport & NFC Schemas
+class MedicalTokenResponse(BaseModel):
+    medical_token: str
+    target_url: str
+    subscription_tier: str
+    nfc_card_linked: bool
+    nfc_last_synced_at: Optional[str] = None
+
+class NFCProvisionResponse(BaseModel):
+    status: str
+    record_type: str
+    ndef_payload: str
+    medical_token: str
+    target_url: str
+    synced_at: str
+
+class EmergencyContactDetail(BaseModel):
+    name: str
+    phone_number: str
+    relation: str
+    tel_link: Optional[str] = None
+
+class PublicPassportResponse(BaseModel):
+    mother_name: str
+    email: Optional[str] = None
+    blood_group: Optional[str] = None
+    allergies: Optional[str] = None
+    preferred_hospital: Optional[str] = None
+    current_gestational_week: Optional[int] = 28
+    expected_due_date: Optional[str] = None
+    emergency_contacts: List[EmergencyContactDetail] = []
+    critical_risk_alerts: List[str] = []
+    ai_report_insights: List[Dict[str, Any]] = []
+
+PublicMedicalPassportResponse = PublicPassportResponse
+
+class SubscriptionUpdateRequest(BaseModel):
+    subscription_tier: Optional[str] = None
+    tier: Optional[str] = None
+
+
+

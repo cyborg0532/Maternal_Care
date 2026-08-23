@@ -1,0 +1,12 @@
+{
+  "name": "maternalcare-root",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "start": "npm --prefix frontend start",
+    "web": "npm --prefix frontend run web",
+    "android": "npm --prefix frontend run android",
+    "ios": "npm --prefix frontend run ios",
+    "backend": "./start.sh"
+  }
+}

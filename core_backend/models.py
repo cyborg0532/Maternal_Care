@@ -10,12 +10,17 @@ class User(Base):
     email = Column(String, unique=True, index=True, nullable=False)
     hashed_password = Column(String, nullable=False)
     role = Column(String, default="mother")  # mother, partner, family, doctor
+    subscription_tier = Column(String, default="FREE")  # 'FREE' | 'PREMIUM'
+    medical_token = Column(String, unique=True, index=True, nullable=True)
+    nfc_card_linked = Column(Boolean, default=False)
+    nfc_last_synced_at = Column(DateTime, nullable=True)
     created_at = Column(DateTime, default=datetime.utcnow)
 
     pregnancy_profile = relationship("PregnancyProfile", back_populates="user", uselist=False)
     medicines = relationship("Medicine", back_populates="user")
     mood_logs = relationship("MoodLog", back_populates="user")
     emergency_profile = relationship("EmergencyProfile", back_populates="user", uselist=False)
+    emergency_contacts = relationship("EmergencyContact", back_populates="user", cascade="all, delete-orphan")
     pcos_assessments = relationship("PCOSAssessment", back_populates="user", cascade="all, delete-orphan")
     pcos_reports = relationship("PCOSMedicalReport", back_populates="user", cascade="all, delete-orphan")
     health_records = relationship("HealthRecord", back_populates="user", cascade="all, delete-orphan")
@@ -138,6 +143,22 @@ class EmergencyProfile(Base):
     created_at = Column(DateTime, default=datetime.utcnow)
 
     user = relationship("User", back_populates="emergency_profile")
+
+
+class EmergencyContact(Base):
+    __tablename__ = "emergency_contacts"
+
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
+    name = Column(String, nullable=False)
+    phone_number = Column(String, nullable=False)
+    relation = Column(String, nullable=False)
+    profile_image = Column(String, nullable=True)
+    is_starred = Column(Boolean, default=False)
+    created_at = Column(DateTime, default=datetime.utcnow)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+    user = relationship("User", back_populates="emergency_contacts")
 
 
 class PCOSAssessment(Base):
